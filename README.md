@@ -38,3 +38,4 @@ More details about the pre-training can be found in the `Pre_training_notebooks`
 4. [USPTO](https://huggingface.co/datasets/OpenMol/USPTO_1k_TPL-SFT)  
 5. [DEEPCHEM](https://github.com/deepchem/deepchem)  
 6. [ChemBERTa-3](https://chemrxiv.org/doi/full/10.26434/chemrxiv-2025-4glrl-v2)
+7. [MoleculeNet](https://arxiv.org/abs/1703.00564)
