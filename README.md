@@ -1,5 +1,7 @@
 # Teaching LLMs Chemistry
 
+**Pre-trained Model link**: https://huggingface.co/Codemaster67/OLMo-7B-USPTO-1k-ZINC
+
 ## Can a general LLM learn chemistry?
 
 In this project, I try to find out whether a general LLM can be taught to master a specific domain (chemistry in this example).
