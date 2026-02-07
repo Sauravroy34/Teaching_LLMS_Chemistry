@@ -1,4 +1,4 @@
-# Teaching LLMs Chemistry
+# OLMO learns Chemistry
 
 **Pre-trained Model link**: https://huggingface.co/Codemaster67/OLMo-7B-USPTO-1k-ZINC
 
