@@ -1,4 +1,6 @@
-# Teaching LLMs Chemistry
+# OLMO learns Chemistry
+
+**Pre-trained Model link**: https://huggingface.co/Codemaster67/OLMo-7B-USPTO-1k-ZINC
 
 ## Can a general LLM learn chemistry?
 
@@ -23,10 +25,10 @@ More details about the pre-training can be found in the `Pre_training_notebooks`
 ## Results
 
 #### Classification
-<img width="1374" height="907" alt="Classification" src="https://github.com/user-attachments/assets/8bbdb313-22e7-4b62-b83f-b3d6ca32802f" />
+<img width="1374" height="907" alt="Classification" src="https://github.com/user-attachments/assets/6ad94996-7c5f-4cc7-8b4a-1af518f17db5" />
 
 #### Regression
-<img width="1380" height="689" alt="Regression" src="https://github.com/user-attachments/assets/49a7eb2a-68b8-43b1-98d6-7bc40ec699e8" />
+<img width="1380" height="689" alt="Regression" src="https://github.com/user-attachments/assets/7e61d519-2a4c-4927-aa27-0533b0da4ab3" />
 
 ## References
 
@@ -36,3 +38,4 @@ More details about the pre-training can be found in the `Pre_training_notebooks`
 4. [USPTO](https://huggingface.co/datasets/OpenMol/USPTO_1k_TPL-SFT)  
 5. [DEEPCHEM](https://github.com/deepchem/deepchem)  
 6. [ChemBERTa-3](https://chemrxiv.org/doi/full/10.26434/chemrxiv-2025-4glrl-v2)
+7. [MoleculeNet](https://arxiv.org/abs/1703.00564)
