@@ -14,6 +14,12 @@ I test the model on the **MoleculeNet** benchmark. I skip big datasets like QM9 
 
 I train the model on 2.1 million raw SMILES strings from the [smiles-molecules-chembl](https://huggingface.co/datasets/antoinebcx/smiles-molecules-chembl) dataset.
 
+I use QLoRA for pre-training with these settings:
+- Target: `all_linear`
+- Rank: 64
+- Alpha: 128
+- Learning rate: 5e-5
+
 - **Training Script**: [RawSmiles.py](Olmo_learns_chemistry/Chembl_2M_and_instruction/RawSmiles.py) (for ChemOlmo-7B)
 
 All benchmark code is in the [Notebooks folder](Notebooks/).
