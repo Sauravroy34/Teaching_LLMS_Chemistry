@@ -20,7 +20,7 @@ I use QLoRA for pre-training with these settings:
 - Alpha: 128
 - Learning rate: 5e-5
 
-- **Training Script**: [RawSmiles.py](Olmo_learns_chemistry/Chembl_2M_and_instruction/RawSmiles.py) (for ChemOlmo-7B)
+- **Training Script**: [RawSmiles.py](Chembl_2M_and_instruction/RawSmiles.py) (for ChemOlmo-7B)
 
 All benchmark code is in the [Notebooks folder](Notebooks/).
 
