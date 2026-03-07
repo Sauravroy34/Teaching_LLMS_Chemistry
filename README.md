@@ -1,41 +1,37 @@
-# OLMO learns Chemistry
+# OLMo Learns Chemistry
 
-**Pre-trained Model link**: https://huggingface.co/Codemaster67/OLMo-7B-USPTO-1k-ZINC
+[![Hugging Face Model](https://img.shields.io/badge/Hugging%20Face-ChemOlmo--7b-blue)](https://huggingface.co/Codemaster67/ChemOlmo-7b)
 
-## Can a general LLM learn chemistry?
+## Can a General LLM Learn Chemistry?
 
-In this project, I try to find out whether a general LLM can be taught to master a specific domain (chemistry in this example).
+In this project, I test if a general large language model (LLM) can learn to handle chemistry tasks well.
 
-I took a general LLM — **OLMo-7B** — which was pre-trained on the **[DOLMA](https://arxiv.org/abs/2402.00159)** dataset, and performed continued pre-training using **QLoRA**.
+I start with **OLMo-7B**, a general LLM pre-trained on the [DOLMA](https://arxiv.org/abs/2402.00159) dataset. I then do continued pre-training using **QLoRA**.
 
-The model was benchmarked on the **MoleculeNet** dataset (excluding some datasets like QM9 and SIDER due to their enormous size).
+I test the model on the **MoleculeNet** benchmark. I skip big datasets like QM9 and SIDER to save time and resources.
 
-## Continued Pre-training
+## Continued Pre-Training
 
-**First step:**  
-The model was first pre-trained on a subset of the **[ZINC20](https://huggingface.co/datasets/zpn/zinc20)** dataset. The goal was to teach the model about SMILES representation. Due to compute constraints, only a **10k subset** could be used. The pre-training method was **QLoRA** on Kaggle with **2×T4 GPUs**. It took around **8 hours** of runtime.
+I train the model on 2.1 million raw SMILES strings from the [smiles-molecules-chembl](https://huggingface.co/datasets/antoinebcx/smiles-molecules-chembl) dataset.
 
-**Second step:**  
-The model was then continued pre-training on a subset of the **[USPTO](https://huggingface.co/datasets/OpenMol/USPTO_1k_TPL-SFT)** reaction dataset. The goal here was — since the model had already learned some chemical structure representation (through ZINC20 pre-training) — to infuse actual chemistry knowledge into the model's weights. Again, due to compute constraints, only a **10k subset** was used. The method was **QLoRA** on Kaggle with **2×T4 GPUs**. This took around **9 hours** of runtime.
+- **Training Script**: [RawSmiles.py](Olmo_learns_chemistry/Chembl_2M_and_instruction/RawSmiles.py) (for ChemOlmo-7B)
 
-I compared the model with other available chemistry-specific transformer models and a random forest baseline. After continued pre-training, the model's scores did improve — however, not enough to overtake some of the chemistry-specific transformer models.
-
-More details about the pre-training can be found in the `Pre_training_notebooks` folder.
+All benchmark code is in the [Notebooks folder](Notebooks/).
 
 ## Results
 
-#### Classification
-<img width="1374" height="907" alt="Classification" src="https://github.com/user-attachments/assets/6ad94996-7c5f-4cc7-8b4a-1af518f17db5" />
+### Classification
+![Classification Results](https://github.com/user-attachments/assets/3ab3eb65-3076-4d1f-bd5f-7fbb823e623e)
 
-#### Regression
-<img width="1380" height="689" alt="Regression" src="https://github.com/user-attachments/assets/7e61d519-2a4c-4927-aa27-0533b0da4ab3" />
+### Regression
+![Regression Results](https://github.com/user-attachments/assets/eebaade0-6bf5-4000-a0b1-872d7788f8f2)
 
 ## References
 
-1. [Dolma](https://arxiv.org/abs/2402.00159)  
-2. [OLMo-7B](https://huggingface.co/allenai/OLMo-7B)  
-3. [ZINC20](https://huggingface.co/datasets/zpn/zinc20)  
-4. [USPTO](https://huggingface.co/datasets/OpenMol/USPTO_1k_TPL-SFT)  
-5. [DEEPCHEM](https://github.com/deepchem/deepchem)  
+1. [Dolma](https://arxiv.org/abs/2402.00159)
+2. [OLMo-7B](https://huggingface.co/allenai/OLMo-7B)
+3. [ZINC20](https://huggingface.co/datasets/zpn/zinc20)
+4. [USPTO](https://huggingface.co/datasets/OpenMol/USPTO_1k_TPL-SFT)
+5. [DeepChem](https://github.com/deepchem/deepchem)
 6. [ChemBERTa-3](https://chemrxiv.org/doi/full/10.26434/chemrxiv-2025-4glrl-v2)
 7. [MoleculeNet](https://arxiv.org/abs/1703.00564)
