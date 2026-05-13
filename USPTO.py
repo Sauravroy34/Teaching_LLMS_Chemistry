@@ -17,14 +17,21 @@ from torch.utils.data import DataLoader
 import os
 import gc
 from torch.optim.lr_scheduler import CosineAnnealingLR, LinearLR, SequentialLR
+
+# ------------------------------------------------------------------------
+# CONFIGURATION
+# ------------------------------------------------------------------------
 from huggingface_hub import login
 
-MODEL_ID = "allenai/OLMo-7B-hf"
-NEW_ADAPTER_NAME = "Codemaster67/ChemOlmo-7b"
 
-TOKEN = "HUGGING FACE TOKEN"
+HF_TOKEN = "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" 
 
-login(token=TOKEN)
+login(token=HF_TOKEN)
+
+MODEL_ID = "Codemaster67/ChemOlmo-7b"
+
+NEW_ADAPTER_NAME = "Codemaster67/ChemOlmo-7b-Reaction"
+
 
 class OLMoQLoRA(pl.LightningModule):
     def __init__(self, model_id, adapter_name):
@@ -32,17 +39,17 @@ class OLMoQLoRA(pl.LightningModule):
         self.save_hyperparameters()
         self.model_id = model_id
         self.adapter_name = adapter_name
-        
+
+        # OLMo requires trust_remote_code=True
         self.tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
 
     def configure_model(self):
-        
         bnb_config = BitsAndBytesConfig(
             load_in_4bit=True,
             bnb_4bit_quant_type="nf4",
-            bnb_4bit_compute_dtype=torch.bfloat16, 
+            bnb_4bit_compute_dtype=torch.bfloat16,
             bnb_4bit_use_double_quant=True,
         )
 
@@ -56,6 +63,7 @@ class OLMoQLoRA(pl.LightningModule):
         model.gradient_checkpointing_enable()
         model = prepare_model_for_kbit_training(model)
 
+        # QLoRA Config
         peft_config = LoraConfig(
             r=64,
             lora_alpha=128,
@@ -65,7 +73,7 @@ class OLMoQLoRA(pl.LightningModule):
             task_type="CAUSAL_LM"
         )
         self.model = get_peft_model(model, peft_config)
-        
+
         if self.trainer.is_global_zero:
             self.model.print_trainable_parameters()
 
@@ -80,18 +88,18 @@ class OLMoQLoRA(pl.LightningModule):
         outputs = self(
             input_ids=batch["input_ids"],
             attention_mask=batch["attention_mask"],
-            labels=batch["labels"] 
+            labels=batch["labels"]
         )
         loss = outputs.loss
-        self.log("train_loss", loss, prog_bar=True, on_step=True, sync_dist=True)
+        self.log("train_loss", loss, prog_bar=True)
         return loss
 
     def configure_optimizers(self):
-        optimizer = torch.optim.AdamW(self.parameters(), lr=5e-5, weight_decay=1e-4)
+        optimizer = torch.optim.AdamW(self.parameters(), lr=2e-5, weight_decay=1e-4)
 
         total_steps = self.trainer.estimated_stepping_batches
 
-        warmup_steps = int(0.10 * total_steps)
+        warmup_steps = int(0.15 * total_steps)
         scheduler_warmup = LinearLR(
             optimizer,
             start_factor=0.001,
@@ -119,7 +127,7 @@ class OLMoQLoRA(pl.LightningModule):
         }
 
 
-class ZINCDataModule(pl.LightningDataModule):
+class USPTODataModule(pl.LightningDataModule):
     def __init__(self, tokenizer, batch_size=4):
         super().__init__()
         self.tokenizer = tokenizer
@@ -127,18 +135,23 @@ class ZINCDataModule(pl.LightningDataModule):
 
     def setup(self, stage=None):
         self.dataset = (
-            load_dataset("antoinebcx/smiles-molecules-chembl", split="train", streaming=True, trust_remote_code=True)
-            
+            load_dataset("pingzhili/uspto-50k", split="train", streaming=True, trust_remote_code=True)
+            .take(400_000)
         )
 
     def train_dataloader(self):
         def collate_fn(batch):
-            texts = [item['smiles'] for item in batch]
+            text_samples = []
+            for item in batch:
+
+                prompt = f"{item['rxn_smiles']}\n"
+                
+                text_samples.append(prompt)
 
             encodings = self.tokenizer(
-                texts,
+                text_samples,
                 truncation=True,
-                max_length=256,
+                max_length=1024,
                 padding="max_length",
                 return_tensors="pt"
             )
@@ -162,18 +175,19 @@ class ZINCDataModule(pl.LightningDataModule):
 if __name__ == "__main__":
     pl_model = OLMoQLoRA(MODEL_ID, NEW_ADAPTER_NAME)
 
-    dm = ZINCDataModule(pl_model.tokenizer, batch_size=32)
+    dm = USPTODataModule(pl_model.tokenizer, batch_size=8)
 
     trainer = pl.Trainer(
-        accelerator="gpu", 
-        precision="bf16-mixed",       
+        accelerator="gpu",
+
+        precision="bf16-mixed",
         max_epochs=1,
-        log_every_n_steps=16,
+        log_every_n_steps=10,
         enable_checkpointing=False,
-        gradient_clip_val=1
+        gradient_clip_val=0.5
     )
 
-    print("Starting Training on first 10k samples...")
+    print(f"Starting Training on USPTO dataset (using base: {MODEL_ID})...")
     trainer.fit(pl_model, datamodule=dm)
 
     # ---------------------------------------------------------
@@ -181,11 +195,10 @@ if __name__ == "__main__":
     # ---------------------------------------------------------
     if trainer.is_global_zero:
         print("Training complete. Saving adapter to temporary local storage...")
-        
-        pl_model.model.save_pretrained("./temp_adapter")
-        pl_model.tokenizer.save_pretrained("./temp_adapter")
-        
-        # Free up memory (VRAM) to allow loading the full base model for merging
+
+        pl_model.model.save_pretrained("./temp_adapter_uspto")
+        pl_model.tokenizer.save_pretrained("./temp_adapter_uspto")
+
         print("Freeing VRAM for merge process...")
         del pl_model
         del trainer
@@ -194,7 +207,7 @@ if __name__ == "__main__":
         torch.cuda.empty_cache()
 
         print("Loading Base Model in FP16 for merging...")
-        # Load base model in float16 (required for merging, cannot merge into 4bit)
+        # NOTE: We load the ZINC-trained model as the base here
         base_model = AutoModelForCausalLM.from_pretrained(
             MODEL_ID,
             return_dict=True,
@@ -204,14 +217,14 @@ if __name__ == "__main__":
         )
 
         print("Loading Adapter and Merging...")
-        model_to_merge = PeftModel.from_pretrained(base_model, "./temp_adapter")
+        model_to_merge = PeftModel.from_pretrained(base_model, "./temp_adapter_uspto")
         model_to_merge = model_to_merge.merge_and_unload()
-        
+
         print(f"Pushing FULL MERGED model to Hub: {NEW_ADAPTER_NAME}")
         model_to_merge.push_to_hub(NEW_ADAPTER_NAME)
-        
+
         # Push tokenizer as well
         tokenizer = AutoTokenizer.from_pretrained(MODEL_ID, trust_remote_code=True)
         tokenizer.push_to_hub(NEW_ADAPTER_NAME)
-        
-        print("Done! Full merged model pushed.")
+
+        print("Done! Full merged USPTO model pushed.")
