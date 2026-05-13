@@ -7,7 +7,7 @@ import gc
 # Use the checkpoint where loss was most stable (Step 1500 or 2000)
 CHECKPOINT_PATH = "/home/saurav/Downloads/unsloth_checkpoints_checkpoint-20000.zip" 
 NEW_REPO_NAME   = "Codemaster67/ChemOlmo2-7b"
-TOKEN           = "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"
+TOKEN           = "NOne"
 
 login(token=TOKEN)
 
