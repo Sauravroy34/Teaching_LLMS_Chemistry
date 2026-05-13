@@ -371,7 +371,7 @@ def main():
                         default="Codemaster67/cleanmol-pretrain-tasks",
                         help="HuggingFace dataset repo name")
     parser.add_argument("--hf_token", type=str,
-                        default="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",
+                        default="",
                         help="HuggingFace API token")
     parser.add_argument("--test_size", type=float, default=0.05,
                         help="Fraction of data for test split (default: 5%%)")
